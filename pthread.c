@@ -72,6 +72,7 @@
 //Thread control structure
 typedef struct {
   pthread_t tid;
+  pid_t pid;
   unsigned int is_detached; //0 if joinable, 1 if detached
   volatile int child_finished;
   void* result; //written by child on exit
@@ -256,7 +257,8 @@ int pthread_create (pthread_t* thread,
 
   //Call clone()
   DEBUG("pthread_create: prior to clone()\n");
-  clone(__pthread_trampoline, tcb->stack_start_addr, CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD, tcb);
+  tcb->pid = clone(__pthread_trampoline, tcb->stack_start_addr, CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD, tcb);
+  printf("pid is : %d \n", (int)tcb->pid);
   DEBUG("pthread_create: after clone()\n");
   return 0;
 }
@@ -275,12 +277,13 @@ int pthread_join (pthread_t thread, void** status) {
     while (child_done == 0) { // spin until child done
         child_done = child_tcb->child_finished;
     }
+
     DEBUG("pthread_join: child joined\n");
     //Get result
     if (status) *status = child_tcb->result;
 
     //Deallocate child block
-    munmap(child_tcb, thread_block_info.total_size);   
+    munmap((void *)child_tcb->tid, thread_block_info.total_size);   
     //free(child_tcb);
     return 0;
 
@@ -312,10 +315,10 @@ void pthread_exit (void* status) {
     //TODO mem barrier here...
     __tcb->child_finished = 1;
     //XXX
-    syscall(__NR_exit,0);
-    assert(0); //should never be reached
+    //syscall(__NR_exit,0);
+    //assert(0); //should never be reached
 
-/*#if defined(__x86) or defined(__x86_64)
+#if defined(__x86) || defined(__x86_64)
     __asm__ __volatile__  (
          "\nmov  $0x3c,%%eax\n\t" \
          "syscall\n\t" 
@@ -331,7 +334,7 @@ void pthread_exit (void* status) {
     #error "No pthread_exit asm for your arch, sorry!\n"
 #endif
 
-    assert(0);*/
+    assert(0);
 }
 
 

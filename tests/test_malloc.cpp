@@ -56,7 +56,6 @@ void* alloc(void* arglist)
     int target = (id + iteration) % nthreads;
     free(ptr_matrix[iteration][target]);
     printf("[ALLOC %d, Thread %lld] Freed %d's allocation, %p\n", iteration, id, target, ptr_matrix[iteration][target]);
-    //free(ptr_matrix[iteration][target]);
     return NULL;
 }
 
