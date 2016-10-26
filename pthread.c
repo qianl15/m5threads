@@ -54,7 +54,7 @@
 #define restrict 
 
 //64KB stack, change to your taste...
-#define CHILD_STACK_BITS 16
+#define CHILD_STACK_BITS 26
 #define CHILD_STACK_SIZE (1 << CHILD_STACK_BITS)
 
 //Debug macro
